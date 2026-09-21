@@ -180,42 +180,13 @@
          * - 成功：ID 字符串
          * - 失败：null
          */
-        const getActivityId = (input) => {
-            const value = input.trim();
-    
-            if (!value) {
-                return null;
-            }
-    
-            // 情况一：直接输入 ID
-            if (/^\d+$/.test(value)) {
-                return value;
-            }
-    
-            // 情况二：输入链接
-            try {
-                const url = new URL(value);
-    
-                // 检查是否为指定的活动详情链接
-                const expectedPath = "/public/index.php/mobile/activity-detail";
-    
-                if (
-                    url.origin === "https://erke.gdut.edu.cn" &&
-                    url.pathname === expectedPath
-                ) {
-                    const id = url.searchParams.get("id");
-    
-                    // id 存在且为数字
-                    if (id && /^\d+$/.test(id)) {
-                        return id;
-                    }
-                }
-            } catch (error) {
-                // 不是合法 URL，继续返回 null
-            }
-    
-            return null;
-        };
+        const getActivityId(input) { 
+            const value = input.trim(); 
+            // 如果本身就是纯数字，直接作为 ID 
+            if (/^\d+$/.test(value)) { return value; } // 否则直接匹配 ?id=数字 或 &id=数字 
+            const match = value.match(/[?&]id=(\d+)/i); 
+            return match ? match[1] : null; 
+        }
     
         const clearQRCodes = () => {
             signInQRCode.clear();
