@@ -180,7 +180,7 @@
          * - 成功：ID 字符串
          * - 失败：null
          */
-        const getActivityId(input) { 
+        const getActivityId = (input) => { 
             const value = input.trim(); 
             // 如果本身就是纯数字，直接作为 ID 
             if (/^\d+$/.test(value)) { return value; } // 否则直接匹配 ?id=数字 或 &id=数字 
