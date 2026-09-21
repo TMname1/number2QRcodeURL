@@ -146,67 +146,144 @@
             二维码每 3 秒刷新一次时间戳。
         </footer>
     </div>
-
     <script>
         const baseUrl = "https://erke.gdut.edu.cn/public/index.php/mobile/activity-sign-result";
         const idInput = document.getElementById("userId");
         const status = document.getElementById("status");
         const signInLink = document.getElementById("signInLink");
         const signOutLink = document.getElementById("signOutLink");
-
+    
         const signInQrContainer = document.getElementById("signInQr");
         const signOutQrContainer = document.getElementById("signOutQr");
-
+    
         const signInQRCode = new QRCode(signInQrContainer, {
             width: 240,
             height: 240,
         });
-
+    
         const signOutQRCode = new QRCode(signOutQrContainer, {
             width: 240,
             height: 240,
         });
-
+    
+        /**
+         * 从输入内容中获取活动 ID
+         *
+         * 支持：
+         * 1. 直接输入 ID：
+         *    12409
+         *
+         * 2. 输入活动详情链接：
+         *    https://erke.gdut.edu.cn/public/index.php/mobile/activity-detail?id=16121&is_from_work=true
+         *
+         * 返回：
+         * - 成功：ID 字符串
+         * - 失败：null
+         */
+        const getActivityId = (input) => {
+            const value = input.trim();
+    
+            if (!value) {
+                return null;
+            }
+    
+            // 情况一：直接输入 ID
+            if (/^\d+$/.test(value)) {
+                return value;
+            }
+    
+            // 情况二：输入链接
+            try {
+                const url = new URL(value);
+    
+                // 检查是否为指定的活动详情链接
+                const expectedPath = "/public/index.php/mobile/activity-detail";
+    
+                if (
+                    url.origin === "https://erke.gdut.edu.cn" &&
+                    url.pathname === expectedPath
+                ) {
+                    const id = url.searchParams.get("id");
+    
+                    // id 存在且为数字
+                    if (id && /^\d+$/.test(id)) {
+                        return id;
+                    }
+                }
+            } catch (error) {
+                // 不是合法 URL，继续返回 null
+            }
+    
+            return null;
+        };
+    
         const clearQRCodes = () => {
             signInQRCode.clear();
             signOutQRCode.clear();
-            signInLink.textContent = "等待输入 ID";
-            signOutLink.textContent = "等待输入 ID";
+    
+            signInLink.textContent = "等待输入 ID 或活动链接";
+            signOutLink.textContent = "等待输入 ID 或活动链接";
+    
             signInLink.classList.add("placeholder");
             signOutLink.classList.add("placeholder");
-            status.textContent = "填写 ID 后自动生成二维码（每 3 秒刷新时间戳）。";
+    
+            status.textContent = "填写 ID 或活动链接后自动生成二维码（每 3 秒刷新时间戳）。";
         };
-
+    
         const updateQRCodes = () => {
-            const rawId = idInput.value.trim();
-
-            if (!rawId) {
+            const rawInput = idInput.value.trim();
+    
+            if (!rawInput) {
                 clearQRCodes();
                 return;
             }
-
+    
+            // 获取活动 ID
+            const activityId = getActivityId(rawInput);
+    
+            if (!activityId) {
+                signInQRCode.clear();
+                signOutQRCode.clear();
+    
+                signInLink.textContent = "无法识别活动 ID";
+                signOutLink.textContent = "无法识别活动 ID";
+    
+                signInLink.classList.add("placeholder");
+                signOutLink.classList.add("placeholder");
+    
+                status.textContent = "请输入正确的活动 ID，或粘贴完整的活动详情链接。";
+                return;
+            }
+    
             const timestamp = Date.now().toString();
-
-            const signInUrl = `${baseUrl}?id=${encodeURIComponent(rawId)}&type=in&ts=${timestamp}`;
-            const signOutUrl = `${baseUrl}?id=${encodeURIComponent(rawId)}&type=out&ts=${timestamp}`;
-
+    
+            const signInUrl =
+                `${baseUrl}?id=${encodeURIComponent(activityId)}&type=in&ts=${timestamp}`;
+    
+            const signOutUrl =
+                `${baseUrl}?id=${encodeURIComponent(activityId)}&type=out&ts=${timestamp}`;
+    
             signInQRCode.clear();
             signOutQRCode.clear();
-
+    
             signInQRCode.makeCode(signInUrl);
             signOutQRCode.makeCode(signOutUrl);
-
+    
             signInLink.textContent = signInUrl;
             signOutLink.textContent = signOutUrl;
+    
             signInLink.classList.remove("placeholder");
             signOutLink.classList.remove("placeholder");
-            status.textContent = `已生成二维码，时间戳：${timestamp}`;
+    
+            status.textContent =
+                `已识别活动 ID：${activityId}，二维码已生成，时间戳：${timestamp}`;
         };
-
+    
         idInput.addEventListener("input", updateQRCodes);
-
+    
+        // 每 3 秒刷新一次时间戳
         setInterval(updateQRCodes, 3000);
-
+    
         clearQRCodes();
     </script>
 </body>
